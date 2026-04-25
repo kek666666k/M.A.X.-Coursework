@@ -1,42 +1,114 @@
 ﻿@page "/"
-@using TrainingApp.Models
-@inject ITrainingService TrainingService
 
 <PageTitle>Главная - Training Tracker</PageTitle>
 
-<h1>Система учета тренировочного процесса</h1>
+<div class="container mt-4">
+    <h1 class="display-4 fw-bold text-primary mb-4">
+        <i class="bi bi-bar-chart-line"></i> Система учета тренировочного процесса
+    </h1>
 
-<div class="row">
-    <div class="col-md-4">
-        <div class="card bg-primary text-white mb-3">
-            <div class="card-header">Тренировки</div>
-            <div class="card-body">
-                <h5 class="card-title">Управление тренировками</h5>
-                <p class="card-text">Создавайте и отслеживайте свои тренировки</p>
-                <a href="/trainings" class="btn btn-light">Перейти</a>
+    <div class="row g-4 mb-5">
+        <!-- Карточка Тренировки -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-lg border-0 hover-card">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-plus-square-fill text-primary" style="font-size: 4rem;"></i>
+                    </div>
+                    <h3 class="card-title mb-3">Тренировки</h3>
+                    <p class="card-text text-muted mb-4">
+                        Создавайте и отслеживайте свои тренировки, планируйте упражнения и отслеживайте прогресс
+                    </p>
+                    <a href="/trainings" class="btn btn-primary btn-lg">
+                        <i class="bi bi-arrow-right"></i> Перейти
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточка Упражнения -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-lg border-0 hover-card">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-list-task text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h3 class="card-title mb-3">Упражнения</h3>
+                    <p class="card-text text-muted mb-4">
+                        База из 55+ упражнений с группировкой по мышечным группам и описанием техники
+                    </p>
+                    <a href="/exercises" class="btn btn-success btn-lg">
+                        <i class="bi bi-arrow-right"></i> Перейти
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточка Статистика -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-lg border-0 hover-card">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-bar-chart-line text-info" style="font-size: 4rem;"></i>
+                    </div>
+                    <h3 class="card-title mb-3">Статистика</h3>
+                    <p class="card-text text-muted mb-4">
+                        Отслеживайте свой прогресс, анализируйте результаты и достигайте новых высот
+                    </p>
+                    <a href="/statistics" class="btn btn-info btn-lg text-white">
+                        <i class="bi bi-arrow-right"></i> Перейти
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-    
-    <div class="col-md-4">
-        <div class="card bg-success text-white mb-3">
-            <div class="card-header">Упражнения</div>
-            <div class="card-body">
-                <h5 class="card-title">База упражнений</h5>
-                <p class="card-text">Добавляйте и управляйте упражнениями</p>
-                <a href="/exercises" class="btn btn-light">Перейти</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card bg-info text-white mb-3">
-            <div class="card-header">Статистика</div>
-            <div class="card-body">
-                <h5 class="card-title">Прогресс</h5>
-                <p class="card-text">Отслеживайте свой прогресс</p>
-                <a href="/statistics" class="btn btn-light">Перейти</a>
+
+    <!-- Дополнительная информация -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="bi bi-info-circle text-primary"></i> О приложении
+                    </h5>
+                    <p class="card-text text-muted">
+                        Training Tracker — это современное веб-приложение для учета тренировочного процесса,
+                        разработанное на ASP.NET Core 8 с использованием Blazor Server. Приложение позволяет
+                        вести базу упражнений, планировать тренировки и отслеживать свой прогресс.
+                    </p>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>55+ упражнений в базе</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Отслеживание прогресса</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Docker контейнеризация</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .hover-card {
+        transition: all 0.3s ease;
+    }
+
+    .hover-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
+    }
+</style>

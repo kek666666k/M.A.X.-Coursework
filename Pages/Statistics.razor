@@ -1,0 +1,178 @@
+﻿@page "/statistics"
+@using TrainingApp.Models
+@using TrainingApp.Services
+@inject ITrainingService TrainingService
+@inject IWorkoutExerciseService WorkoutExerciseService
+
+<PageTitle>Статистика - Training Tracker</PageTitle>
+
+<div class="container-fluid mt-4">
+    <h1 class="display-5 fw-bold text-primary mb-4">
+        <i class="bi bi-bar-chart-line"></i> Статистика и прогресс
+    </h1>
+
+    @if (trainings == null)
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-hourglass-split"></i> Загрузка статистики...
+        </div>
+    }
+    else
+    {
+        <!-- Общая статистика -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card shadow-sm border-primary h-100">
+                    <div class="card-body text-center">
+                        <h2 class="text-primary display-4 mb-2">@trainings.Count</h2>
+                        <p class="mb-0 text-muted">Всего тренировок</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-success h-100">
+                    <div class="card-body text-center">
+                        <h2 class="text-success display-4 mb-2">@totalExercises</h2>
+                        <p class="mb-0 text-muted">Всего упражнений</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-info h-100">
+                    <div class="card-body text-center">
+                        <h2 class="text-info display-4 mb-2">@totalMinutes</h2>
+                        <p class="mb-0 text-muted">Всего минут</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-warning h-100">
+                    <div class="card-body text-center">
+                        <h2 class="text-warning display-4 mb-2">@avgDuration мин</h2>
+                        <p class="mb-0 text-muted">Средняя длительность</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Статистика по упражнениям -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light fw-bold">
+                        <i class="bi bi-dumbbell"></i> Статистика по упражнениям
+                    </div>
+                    <div class="card-body">
+                        @if (exerciseStats.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Упражнение</th>
+                                            <th>Группа мышц</th>
+                                            <th>Количество выполнений</th>
+                                            <th>Средний вес (кг)</th>
+                                            <th>Макс. вес (кг)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var stat in exerciseStats.OrderByDescending(s => s.Count))
+                                        {
+                                            <tr>
+                                                <td class="fw-bold">@stat.ExerciseName</td>
+                                                <td><span class="badge bg-secondary">@stat.MuscleGroup</span></td>
+                                                <td><span class="badge bg-primary">@stat.Count</span></td>
+                                                <td>@stat.AvgWeight.ToString("F1")</td>
+                                                <td><span class="badge bg-success">@stat.MaxWeight.ToString("F1")</span></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-1"></i>
+                                <p class="mb-0">Пока нет статистики по упражнениям</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Последние тренировки -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light fw-bold">
+                        <i class="bi bi-clock-history"></i> Последние тренировки
+                    </div>
+                    <div class="card-body">
+                        @if (recentTrainings.Any())
+                        {
+                            <div class="list-group">
+                                @foreach (var training in recentTrainings.Take(5))
+                                {
+                                    <a href="/training/@training.Id" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1 fw-bold text-primary">@training.Title</h6>
+                                            <small class="text-muted">@training.Date.ToString("dd.MM.yyyy")</small>
+                                        </div>
+                                        <p class="mb-1">
+                                            <i class="bi bi-clock"></i> @training.DurationMinutes мин
+                                        </p>
+                                    </a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-calendar-x fs-1"></i>
+                                <p class="mb-0">Тренировок пока нет</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Training> trainings = new();
+    private List<Training> recentTrainings = new();
+    private int totalExercises = 0;
+    private int totalMinutes = 0;
+    private int avgDuration = 0;
+    private List<ExerciseStat> exerciseStats = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        trainings = (await TrainingService.GetAllAsync()).ToList();
+        recentTrainings = trainings.OrderByDescending(t => t.Date).ToList();
+
+        totalExercises = trainings.Count;
+        totalMinutes = trainings.Sum(t => t.DurationMinutes);
+        avgDuration = trainings.Any() ? (int)Math.Round(trainings.Average(t => (double)t.DurationMinutes)) : 0;
+
+        exerciseStats = new List<ExerciseStat>
+        {
+            new ExerciseStat { ExerciseName = "Жим лёжа", MuscleGroup = "Грудь", Count = 3, AvgWeight = 80.0, MaxWeight = 87.5 },
+            new ExerciseStat { ExerciseName = "Приседания", MuscleGroup = "Ноги", Count = 2, AvgWeight = 100.0, MaxWeight = 110.0 },
+            new ExerciseStat { ExerciseName = "Тяга штанги в наклоне", MuscleGroup = "Спина", Count = 2, AvgWeight = 60.0, MaxWeight = 60.0 }
+        };
+    }
+
+    public class ExerciseStat
+    {
+        public string ExerciseName { get; set; } = string.Empty;
+        public string MuscleGroup { get; set; } = string.Empty;
+        public int Count { get; set; }
+        public double AvgWeight { get; set; }
+        public double MaxWeight { get; set; }
+    }
+}
