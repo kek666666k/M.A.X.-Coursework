@@ -1,0 +1,179 @@
+﻿@page "/exercises"
+@using TrainingApp.Models
+@using TrainingApp.Services
+@inject IExerciseService ExerciseService
+
+<PageTitle>Упражнения - Training Tracker</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-primary"><i class="bi bi-list-task"></i> База упражнений</h1>
+        <button class="btn btn-primary btn-lg" @onclick="ShowAddForm">
+            <i class="bi bi-plus-circle"></i> Добавить упражнение
+        </button>
+    </div>
+
+    @if (showForm)
+    {
+        <div class="card mb-4 shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">@(isEditing ? "✏️ Редактирование упражнения" : "➕ Новое упражнение")</h5>
+            </div>
+            <div class="card-body">
+                <EditForm Model="@currentExercise" OnValidSubmit="SaveExercise">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Название *</label>
+                        <InputText @bind-Value="currentExercise.Name" class="form-control" placeholder="Например: Жим лёжа" />
+                        <ValidationMessage For="@(() => currentExercise.Name)" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Группа мышц</label>
+                        <InputText @bind-Value="currentExercise.MuscleGroup" class="form-control" placeholder="Например: Грудь" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Описание</label>
+                        <InputTextArea @bind-Value="currentExercise.Description" class="form-control" rows="3" placeholder="Техника выполнения..." />
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Сохранить
+                        </button>
+                        <button type="button" class="btn btn-secondary" @onclick="CancelForm">
+                            <i class="bi bi-x-circle"></i> Отмена
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    @if (exercises == null)
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-hourglass-split"></i> Загрузка...
+        </div>
+    }
+    else if (!exercises.Any())
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> Упражнений пока нет. Добавьте первое!
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var exercise in exercises.OrderBy(e => e.MuscleGroup).ThenBy(e => e.Name))
+            {
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm border-primary">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0 text-primary">
+                                <i class="bi bi-dumbbell"></i> @exercise.Name
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (!string.IsNullOrEmpty(exercise.MuscleGroup))
+                            {
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="bi bi-body-text"></i> @exercise.MuscleGroup
+                                </h6>
+                            }
+                            @if (!string.IsNullOrEmpty(exercise.Description))
+                            {
+                                <p class="card-text text-dark">@exercise.Description</p>
+                            }
+                            <div class="mt-3 d-flex gap-2">
+                                <button class="btn btn-outline-primary" @onclick="() => EditExercise(exercise)">
+                                    <i class="bi bi-pencil"></i> Редактировать
+                                </button>
+                                <button class="btn btn-outline-danger" @onclick="() => DeleteExercise(exercise.Id)">
+                                    <i class="bi bi-trash"></i> Удалить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Exercise> exercises = new();
+    private Exercise currentExercise = new();
+    private bool showForm = false;
+    private bool isEditing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExercises();
+    }
+
+    private async Task LoadExercises()
+    {
+        var result = await ExerciseService.GetAllAsync();
+        exercises = result.ToList();
+    }
+
+    private void ShowAddForm()
+    {
+        currentExercise = new Exercise();
+        isEditing = false;
+        showForm = true;
+    }
+
+    private async Task SaveExercise()
+    {
+        try
+        {
+            if (isEditing)
+            {
+                await ExerciseService.UpdateAsync(currentExercise);
+            }
+            else
+            {
+                await ExerciseService.AddAsync(currentExercise);
+            }
+
+            currentExercise = new Exercise();
+            showForm = false;
+            isEditing = false;
+            await LoadExercises();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private void CancelForm()
+    {
+        currentExercise = new Exercise();
+        showForm = false;
+        isEditing = false;
+    }
+
+    private void EditExercise(Exercise exercise)
+    {
+        currentExercise = new Exercise
+            {
+                Id = exercise.Id,
+                Name = exercise.Name,
+                MuscleGroup = exercise.MuscleGroup,
+                Description = exercise.Description
+            };
+        isEditing = true;
+        showForm = true;
+    }
+
+    private async Task DeleteExercise(int id)
+    {
+        await ExerciseService.DeleteAsync(id);
+        await LoadExercises();
+    }
+}

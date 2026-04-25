@@ -1,0 +1,14 @@
+# Visual Studio files
+.vs/
+*.suo
+*.user
+*.userosscache
+
+# Build results
+bin/
+obj/
+
+# Database
+app.db
+app.db-shm
+app.db-wal

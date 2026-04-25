@@ -1,0 +1,309 @@
+@page "/trainings"
+@using TrainingApp.Models
+@using TrainingApp.Services
+@inject ITrainingService TrainingService
+@inject NavigationManager Navigation
+
+<PageTitle>Тренировки - Training Tracker</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-5 fw-bold text-primary">
+            <i class="bi bi-calendar-plus"></i> Тренировки
+        </h1>
+        <button class="btn btn-primary btn-lg" @onclick="ShowAddForm">
+            <i class="bi bi-plus-circle"></i> Добавить тренировку
+        </button>
+    </div>
+
+    @if (showForm)
+    {
+        <div class="card shadow-lg mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    @(isEditing ? "✏️ Редактирование тренировки" : "➕ Новая тренировка")
+                </h4>
+            </div>
+            <div class="card-body">
+                <EditForm Model="@currentTraining" OnValidSubmit="SaveTraining">
+                    <DataAnnotationsValidator />
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Название тренировки *</label>
+                            <InputText @bind-Value="currentTraining.Title" class="form-control form-control-lg"
+                                       placeholder="Например: Понедельник - Тяжёлый жим" />
+                            <ValidationMessage For="@(() => currentTraining.Title)" class="text-danger" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Дата</label>
+                            <InputDate @bind-Value="currentTraining.Date" class="form-control form-control-lg" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Длительность (минут)</label>
+                            <InputNumber @bind-Value="currentTraining.DurationMinutes" class="form-control form-control-lg" />
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Описание программы</label>
+                            <InputTextArea @bind-Value="currentTraining.Description" class="form-control" rows="5"
+                                           placeholder="Описание тренировки, упражнения, подходы, повторения..." />
+                        </div>
+
+                        <div class="col-12">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-check-circle"></i> Сохранить
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-lg" @onclick="CancelForm">
+                                    <i class="bi bi-x-circle"></i> Отмена
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    @if (trainings == null)
+    {
+        <div class="alert alert-info d-flex align-items-center">
+            <i class="bi bi-hourglass-split fs-2 me-3"></i>
+            <div>
+                <h5 class="mb-0">Загрузка тренировок...</h5>
+            </div>
+        </div>
+    }
+    else if (!trainings.Any())
+    {
+        <div class="alert alert-warning d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle fs-2 me-3"></i>
+            <div>
+                <h5 class="mb-0">Тренировок пока нет</h5>
+                <p class="mb-0">Добавьте первую тренировку, нажав кнопку выше!</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-list-ul"></i> Список тренировок (@trainings.Count)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-primary">
+                            <tr>
+                                <th style="width: 5%">#</th>
+                                <th style="width: 30%">Название</th>
+                                <th style="width: 15%">Дата</th>
+                                <th style="width: 10%">Длительность</th>
+                                <th style="width: 30%">Описание</th>
+                                <th style="width: 10%">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var training in trainings.OrderBy(t => t.Date))
+                            {
+                                <tr class="align-middle">
+                                    <td>
+                                        <span class="badge bg-primary rounded-circle">@training.Id</span>
+                                    </td>
+                                    <td>
+                                        <h6 class="mb-0 fw-bold text-primary">@training.Title</h6>
+                                    </td>
+                                    <td>
+                                        <i class="bi bi-calendar3 me-1"></i>
+                                        @training.Date.ToString("dd.MM.yyyy")
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-clock"></i> @training.DurationMinutes мин
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(training.Description))
+                                        {
+                                            <small class="text-muted">
+                                                @(training.Description.Length > 50
+                                                    ? training.Description.Substring(0, 50) + "..."
+                                                    : training.Description)
+                                            </small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">Нет описания</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                    @onclick="() => EditTraining(training)"
+                                                    title="Редактировать">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <a href="/training/@training.Id"
+                                               class="btn btn-sm btn-outline-info"
+                                               title="Просмотр">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    @onclick="() => DeleteTraining(training.Id)"
+                                                    title="Удалить">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточки для наглядности (альтернативный вид) -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3 class="mb-3"><i class="bi bi-grid-3x3-gap"></i> Карточки тренировок</h3>
+            </div>
+            @foreach (var training in trainings.OrderBy(t => t.Date))
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm border-primary hover-card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">@training.Title</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                <i class="bi bi-calendar3 text-primary"></i>
+                                <strong>@training.Date.ToString("dd.MM.yyyy")</strong><br />
+                                <i class="bi bi-clock text-success"></i>
+                                <strong>@training.DurationMinutes минут</strong>
+                            </p>
+                            @if (!string.IsNullOrEmpty(training.Description))
+                            {
+                                <p class="card-text text-muted small" style="white-space: pre-line;">
+                                    @training.Description
+                                </p>
+                            }
+                        </div>
+                        <div class="card-footer bg-white border-top">
+                            <div class="btn-group w-100" role="group">
+                                <button class="btn btn-sm btn-primary" @onclick="() => EditTraining(training)">
+                                    <i class="bi bi-pencil"></i> Изменить
+                                </button>
+                                <a href="/training/@training.Id" class="btn btn-sm btn-info text-white">
+                                    <i class="bi bi-eye"></i> Просмотр
+                                </a>
+                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteTraining(training.Id)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .hover-card {
+        transition: all 0.3s ease;
+    }
+
+        .hover-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+        }
+
+    .table tbody tr {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+</style>
+
+@code {
+    private List<Training> trainings = new();
+    private Training currentTraining = new();
+    private bool showForm = false;
+    private bool isEditing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTrainings();
+    }
+
+    private async Task LoadTrainings()
+    {
+        var result = await TrainingService.GetAllAsync();
+        trainings = result.ToList();
+    }
+
+    private void ShowAddForm()
+    {
+        currentTraining = new Training
+            {
+                Date = DateTime.Today,
+                DurationMinutes = 60
+            };
+        isEditing = false;
+        showForm = true;
+    }
+
+    private void EditTraining(Training training)
+    {
+        currentTraining = new Training
+            {
+                Id = training.Id,
+                Title = training.Title,
+                Date = training.Date,
+                DurationMinutes = training.DurationMinutes,
+                Description = training.Description
+            };
+        isEditing = true;
+        showForm = true;
+
+        // Прокрутка к форме
+        showForm = true;
+    }
+
+    private async Task SaveTraining()
+    {
+        if (isEditing)
+        {
+            await TrainingService.UpdateAsync(currentTraining);
+        }
+        else
+        {
+            await TrainingService.AddAsync(currentTraining);
+        }
+
+        currentTraining = new Training();
+        showForm = false;
+        isEditing = false;
+        await LoadTrainings();
+    }
+
+    private void CancelForm()
+    {
+        currentTraining = new Training();
+        showForm = false;
+        isEditing = false;
+    }
+
+    private async Task DeleteTraining(int id)
+    {
+        await TrainingService.DeleteAsync(id);
+        await LoadTrainings();
+    }
+}

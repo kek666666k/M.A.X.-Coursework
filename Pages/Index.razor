@@ -1,0 +1,42 @@
+﻿@page "/"
+@using TrainingApp.Models
+@inject ITrainingService TrainingService
+
+<PageTitle>Главная - Training Tracker</PageTitle>
+
+<h1>Система учета тренировочного процесса</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white mb-3">
+            <div class="card-header">Тренировки</div>
+            <div class="card-body">
+                <h5 class="card-title">Управление тренировками</h5>
+                <p class="card-text">Создавайте и отслеживайте свои тренировки</p>
+                <a href="/trainings" class="btn btn-light">Перейти</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-success text-white mb-3">
+            <div class="card-header">Упражнения</div>
+            <div class="card-body">
+                <h5 class="card-title">База упражнений</h5>
+                <p class="card-text">Добавляйте и управляйте упражнениями</p>
+                <a href="/exercises" class="btn btn-light">Перейти</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-info text-white mb-3">
+            <div class="card-header">Статистика</div>
+            <div class="card-body">
+                <h5 class="card-title">Прогресс</h5>
+                <p class="card-text">Отслеживайте свой прогресс</p>
+                <a href="/statistics" class="btn btn-light">Перейти</a>
+            </div>
+        </div>
+    </div>
+</div>

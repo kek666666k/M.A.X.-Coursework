@@ -1,0 +1,252 @@
+﻿@page "/training/{Id:int}"
+@using System.Linq
+@using TrainingApp.Models
+@using TrainingApp.Services
+@inject ITrainingService TrainingService
+@inject IExerciseService ExerciseService
+@inject IWorkoutExerciseService WorkoutExerciseService
+@inject NavigationManager NavigationManager
+
+<PageTitle>@(training?.Title ?? "Загрузка...")</PageTitle>
+
+@if (training == null)
+{
+    <div class="alert alert-info">
+        <i class="bi bi-hourglass-split"></i> Загрузка данных...
+    </div>
+}
+else
+{
+    <div class="container-fluid mt-4">
+        <!-- Заголовок -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="/trainings" class="btn btn-outline-secondary mb-2">
+                    <i class="bi bi-arrow-left"></i> Назад к списку
+                </a>
+                <h1 class="display-5 fw-bold text-primary mb-0">
+                    <i class="bi bi-calendar-check-fill"></i> @training.Title
+                </h1>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" @onclick="EditTraining">
+                    <i class="bi bi-pencil-square"></i> Редактировать
+                </button>
+                <button class="btn btn-outline-danger" @onclick="ConfirmDelete">
+                    <i class="bi bi-trash"></i> Удалить
+                </button>
+            </div>
+        </div>
+
+        <!-- Карточки статистики -->
+        <div class="row mb-4 g-3">
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100 border-start border-4 border-primary">
+                    <div class="card-body text-center">
+                        <h3 class="text-primary mb-1">
+                            <i class="bi bi-calendar3"></i> @training.Date.ToString("dd.MM.yyyy")
+                        </h3>
+                        <p class="text-muted mb-0">Дата тренировки</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100 border-start border-4 border-success">
+                    <div class="card-body text-center">
+                        <h3 class="text-success mb-1">
+                            <i class="bi bi-clock"></i> @training.DurationMinutes мин
+                        </h3>
+                        <p class="text-muted mb-0">Длительность</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100 border-start border-4 border-info">
+                    <div class="card-body text-center">
+                        <h3 class="text-info mb-1">
+                            <i class="bi bi-list-ol"></i> @workoutExercises.Count
+                        </h3>
+                        <p class="text-muted mb-0">Упражнений</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Описание -->
+        @if (!string.IsNullOrWhiteSpace(training.Description))
+        {
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light fw-bold">
+                    <i class="bi bi-file-text"></i> Программа и заметки
+                </div>
+                <div class="card-body">
+                    <div class="p-3 bg-light rounded" style="white-space: pre-wrap;">@training.Description</div>
+                </div>
+            </div>
+        }
+
+        <!-- Упражнения -->
+        <div class="card shadow-sm mb-5">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-dumbbell"></i> Упражнения</h5>
+                <button class="btn btn-light btn-sm" @onclick="ShowAddExerciseForm">
+                    <i class="bi bi-plus-lg"></i> Добавить упражнение
+                </button>
+            </div>
+            <div class="card-body">
+                @if (showExerciseForm)
+                {
+                    <div class="card mb-3 border-primary">
+                        <div class="card-header bg-light">Новое упражнение</div>
+                        <div class="card-body">
+                            <EditForm Model="@newWorkoutExercise" OnValidSubmit="SaveExerciseToTraining">
+                                <DataAnnotationsValidator />
+                                <div class="row g-3">
+                                    <div class="col-md-5">
+                                        <label class="form-label fw-bold">Упражнение *</label>
+                                        <InputSelect @bind-Value="newWorkoutExercise.ExerciseId" class="form-select">
+                                            <option value="">-- Выберите --</option>
+                                            @foreach (var ex in availableExercises)
+                                            {
+                                                <option value="@ex.Id">@ex.Name (@ex.MuscleGroup)</option>
+                                            }
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => newWorkoutExercise.ExerciseId)" class="text-danger" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-bold">Подходы</label>
+                                        <InputNumber @bind-Value="newWorkoutExercise.Sets" class="form-control" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-bold">Повторения</label>
+                                        <InputNumber @bind-Value="newWorkoutExercise.Reps" class="form-control" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-bold">Вес (кг)</label>
+                                        <InputNumber @bind-Value="newWorkoutExercise.WeightKg" class="form-control" />
+                                    </div>
+                                    <div class="col-md-1 d-flex align-items-end gap-1">
+                                        <button type="submit" class="btn btn-success btn-sm mb-1 flex-grow-1">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-sm mb-1 flex-grow-1" @onclick="CancelAddExercise">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Примечание</label>
+                                        <InputText @bind-Value="newWorkoutExercise.Notes" class="form-control" placeholder="Например: отдых 90 сек" />
+                                    </div>
+                                </div>
+                            </EditForm>
+                        </div>
+                    </div>
+                }
+
+                @if (!workoutExercises.Any())
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                        Упражнений пока нет
+                    </div>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var we in workoutExercises.OrderBy(x => x.Order).ToList())
+                        {
+                            <div class="list-group-item list-group-item-action py-3 px-0 border-0 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1 fw-bold text-dark">@GetExerciseName(we.ExerciseId)</h6>
+                                        <div class="d-flex gap-2 mb-1">
+                                            @if (we.Sets > 0 && we.Reps > 0)
+                                            {
+                                                <span class="badge bg-primary rounded-pill">
+                                                    <i class="bi bi-arrow-repeat"></i> @we.Sets × @we.Reps
+                                                </span>
+                                            }
+                                            @if (we.WeightKg.HasValue && we.WeightKg > 0)
+                                            {
+                                                <span class="badge bg-success rounded-pill">
+                                                    <i class="bi bi-bar-chart-fill"></i> @we.WeightKg кг
+                                                </span>
+                                            }
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(we.Notes))
+                                        {
+                                            <small class="text-muted fst-italic">@we.Notes</small>
+                                        }
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteExerciseFromTraining(we.Id)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Training? training;
+    private List<WorkoutExercise> workoutExercises = new();
+    private List<Exercise> availableExercises = new();
+    private WorkoutExercise newWorkoutExercise = new();
+    private bool showExerciseForm = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        training = await TrainingService.GetByIdAsync(Id);
+        if (training != null)
+        {
+            workoutExercises = (await WorkoutExerciseService.GetByTrainingIdAsync(Id)).ToList();
+            availableExercises = (await ExerciseService.GetAllAsync()).ToList();
+        }
+    }
+
+    private string GetExerciseName(int exerciseId)
+    {
+        return availableExercises.FirstOrDefault(e => e.Id == exerciseId)?.Name ?? "Неизвестное упражнение";
+    }
+
+    private void ShowAddExerciseForm()
+    {
+        newWorkoutExercise = new WorkoutExercise { TrainingId = Id, Sets = 3, Reps = 10 };
+        showExerciseForm = true;
+    }
+
+    private async Task SaveExerciseToTraining()
+    {
+        await WorkoutExerciseService.AddAsync(newWorkoutExercise);
+        showExerciseForm = false;
+        workoutExercises = (await WorkoutExerciseService.GetByTrainingIdAsync(Id)).ToList();
+    }
+
+    private void CancelAddExercise()
+    {
+        showExerciseForm = false;
+    }
+
+    private async Task DeleteExerciseFromTraining(int workoutExerciseId)
+    {
+        await WorkoutExerciseService.DeleteAsync(workoutExerciseId);
+        workoutExercises = (await WorkoutExerciseService.GetByTrainingIdAsync(Id)).ToList();
+    }
+
+    private void EditTraining()
+    {
+        NavigationManager.NavigateTo($"/training/edit/{Id}");
+    }
+
+    private async Task ConfirmDelete()
+    {
+        await TrainingService.DeleteAsync(Id);
+        NavigationManager.NavigateTo("/trainings");
+    }
+}
