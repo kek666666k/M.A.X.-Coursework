@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+п»їusing Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Components.Server;
 using TrainingApp.Data;
 using TrainingApp.Repositories;
@@ -8,11 +8,7 @@ using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ============================================
-// 1. Регистрация сервисов (Dependency Injection)
-// ============================================
-
-// Blazor Server и Razor Pages
+// Blazor Server Рё Razor Pages
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
@@ -20,29 +16,24 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Валидация (FluentValidation) - требование ТЗ
-// Регистрируем все валидаторы из сборки
+// FluentValidation - СЂРµРіРёСЃС‚СЂР°С†РёСЏ РІР°Р»РёРґР°С‚РѕСЂРѕРІ
 builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
-// --- Тренировки (Training) ---
+// РўСЂРµРЅРёСЂРѕРІРєРё
 builder.Services.AddScoped<ITrainingRepository, TrainingRepository>();
 builder.Services.AddScoped<ITrainingService, TrainingService>();
 
-// --- Упражнения (Exercise) ---
+// РЈРїСЂР°Р¶РЅРµРЅРёСЏ
 builder.Services.AddScoped<IExerciseRepository, ExerciseRepository>();
 builder.Services.AddScoped<IExerciseService, ExerciseService>();
 
-// --- Связь Тренировка-Упражнение (WorkoutExercise) ---
+// WorkoutExercise
 builder.Services.AddScoped<IWorkoutExerciseRepository, WorkoutExerciseRepository>();
 builder.Services.AddScoped<IWorkoutExerciseService, WorkoutExerciseService>();
 
-// ============================================
-// 2. Сборка приложения и Middleware
-// ============================================
-
 var app = builder.Build();
 
-// Настройка окружения
+// Middleware
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -56,10 +47,7 @@ app.UseRouting();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
-// ============================================
-// 3. Применение миграций при запуске
-// ============================================
-
+// РџСЂРёРјРµРЅРµРЅРёРµ РјРёРіСЂР°С†РёР№
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -71,12 +59,8 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ошибка при миграции или инициализации базы данных.");
+        logger.LogError(ex, "РћС€РёР±РєР° РїСЂРё РјРёРіСЂР°С†РёРё Р‘Р”");
     }
 }
-
-// ============================================
-// 4. Запуск
-// ============================================
 
 app.Run();

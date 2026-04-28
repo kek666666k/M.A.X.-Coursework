@@ -3,9 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TrainingApp.Models;
 
-/// <summary>
-/// Связующая таблица: упражнение в тренировке с параметрами
-/// </summary>
+
 public class WorkoutExercise
 {
     [Key]
@@ -23,14 +21,10 @@ public class WorkoutExercise
 
     public double? WeightKg { get; set; }
 
-    /// <summary>
-    /// Примечания к упражнению
-    /// </summary>
+  
     public string? Notes { get; set; }
 
-    /// <summary>
-    /// Порядок выполнения упражнения
-    /// </summary>
+ 
     public int Order { get; set; }
 
     // Навигационные свойства

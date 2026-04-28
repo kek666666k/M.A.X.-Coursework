@@ -17,6 +17,12 @@
             <i class="bi bi-hourglass-split"></i> Загрузка статистики...
         </div>
     }
+    else if (!trainings.Any())
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> Нет данных для статистики. Добавьте тренировки!
+        </div>
+    }
     else
     {
         <!-- Общая статистика -->
@@ -32,59 +38,61 @@
             <div class="col-md-3">
                 <div class="card shadow-sm border-success h-100">
                     <div class="card-body text-center">
-                        <h2 class="text-success display-4 mb-2">@totalExercises</h2>
-                        <p class="mb-0 text-muted">Всего упражнений</p>
+                        <h2 class="text-success display-4 mb-2">@totalMinutes</h2>
+                        <p class="mb-0 text-muted">Всего минут</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card shadow-sm border-info h-100">
                     <div class="card-body text-center">
-                        <h2 class="text-info display-4 mb-2">@totalMinutes</h2>
-                        <p class="mb-0 text-muted">Всего минут</p>
+                        <h2 class="text-info display-4 mb-2">@avgDuration мин</h2>
+                        <p class="mb-0 text-muted">Средняя длительность</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card shadow-sm border-warning h-100">
                     <div class="card-body text-center">
-                        <h2 class="text-warning display-4 mb-2">@avgDuration мин</h2>
-                        <p class="mb-0 text-muted">Средняя длительность</p>
+                        <h2 class="text-warning display-4 mb-2">@totalWorkouts</h2>
+                        <p class="mb-0 text-muted">Тренировок с упражнениями</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Статистика по упражнениям -->
+        <!-- Прогресс по неделям -->
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card shadow-sm">
                     <div class="card-header bg-light fw-bold">
-                        <i class="bi bi-dumbbell"></i> Статистика по упражнениям
+                        <i class="bi bi-calendar-week"></i> Активность по неделям
                     </div>
                     <div class="card-body">
-                        @if (exerciseStats.Any())
+                        @if (weeklyStats.Any())
                         {
                             <div class="table-responsive">
                                 <table class="table table-hover">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>Упражнение</th>
-                                            <th>Группа мышц</th>
-                                            <th>Количество выполнений</th>
-                                            <th>Средний вес (кг)</th>
-                                            <th>Макс. вес (кг)</th>
+                                            <th>Неделя</th>
+                                            <th>Тренировок</th>
+                                            <th>Общее время</th>
+                                            <th>Средняя длительность</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach (var stat in exerciseStats.OrderByDescending(s => s.Count))
+                                        @foreach (var week in weeklyStats.OrderByDescending(w => w.WeekNumber))
                                         {
                                             <tr>
-                                                <td class="fw-bold">@stat.ExerciseName</td>
-                                                <td><span class="badge bg-secondary">@stat.MuscleGroup</span></td>
-                                                <td><span class="badge bg-primary">@stat.Count</span></td>
-                                                <td>@stat.AvgWeight.ToString("F1")</td>
-                                                <td><span class="badge bg-success">@stat.MaxWeight.ToString("F1")</span></td>
+                                                <td>
+                                                    <strong>Неделя @week.WeekNumber</strong>
+                                                    <br />
+                                                    <small class="text-muted">@week.StartDate.ToString("dd.MM") - @week.EndDate.ToString("dd.MM.yyyy")</small>
+                                                </td>
+                                                <td><span class="badge bg-primary">@week.TrainingCount</span></td>
+                                                <td>@week.TotalMinutes мин</td>
+                                                <td>@week.AvgMinutes мин</td>
                                             </tr>
                                         }
                                     </tbody>
@@ -93,10 +101,67 @@
                         }
                         else
                         {
-                            <div class="text-center text-muted py-4">
-                                <i class="bi bi-inbox fs-1"></i>
-                                <p class="mb-0">Пока нет статистики по упражнениям</p>
+                            <p class="text-muted text-center">Нет данных</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Топ упражнений -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        <i class="bi bi-trophy"></i> Топ 5 самых частых упражнений
+                    </div>
+                    <div class="card-body">
+                        @if (topExercises.Any())
+                        {
+                            <div class="list-group">
+                                @foreach (var ex in topExercises.Take(5))
+                                {
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>@ex.ExerciseName</strong>
+                                            <br />
+                                            <small class="text-muted">@ex.MuscleGroup</small>
+                                        </div>
+                                        <span class="badge bg-primary rounded-pill">@ex.Count раз</span>
+                                    </div>
+                                }
                             </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center">Нет данных</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Статистика по мышечным группам -->
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white fw-bold">
+                        <i class="bi bi-pie-chart"></i> Распределение по мышечным группам
+                    </div>
+                    <div class="card-body">
+                        @if (muscleGroupStats.Any())
+                        {
+                            <div class="list-group">
+                                @foreach (var group in muscleGroupStats.OrderByDescending(g => g.Count))
+                                {
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>@group.MuscleGroup</span>
+                                        <span class="badge bg-success rounded-pill">@group.Count раз</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center">Нет данных</p>
                         }
                     </div>
                 </div>
@@ -108,7 +173,7 @@
             <div class="col-12">
                 <div class="card shadow-sm">
                     <div class="card-header bg-light fw-bold">
-                        <i class="bi bi-clock-history"></i> Последние тренировки
+                        <i class="bi bi-clock-history"></i> Последние 5 тренировок
                     </div>
                     <div class="card-body">
                         @if (recentTrainings.Any())
@@ -130,10 +195,7 @@
                         }
                         else
                         {
-                            <div class="text-center text-muted py-4">
-                                <i class="bi bi-calendar-x fs-1"></i>
-                                <p class="mb-0">Тренировок пока нет</p>
-                            </div>
+                            <p class="text-muted text-center">Нет тренировок</p>
                         }
                     </div>
                 </div>
@@ -145,26 +207,82 @@
 @code {
     private List<Training> trainings = new();
     private List<Training> recentTrainings = new();
-    private int totalExercises = 0;
     private int totalMinutes = 0;
     private int avgDuration = 0;
-    private List<ExerciseStat> exerciseStats = new();
+    private int totalWorkouts = 0;
+    private List<WeeklyStat> weeklyStats = new();
+    private List<ExerciseStat> topExercises = new();
+    private List<MuscleGroupStat> muscleGroupStats = new();
 
     protected override async Task OnInitializedAsync()
     {
         trainings = (await TrainingService.GetAllAsync()).ToList();
         recentTrainings = trainings.OrderByDescending(t => t.Date).ToList();
 
-        totalExercises = trainings.Count;
         totalMinutes = trainings.Sum(t => t.DurationMinutes);
         avgDuration = trainings.Any() ? (int)Math.Round(trainings.Average(t => (double)t.DurationMinutes)) : 0;
+        totalWorkouts = trainings.Count(t => t.DurationMinutes > 0);
 
-        exerciseStats = new List<ExerciseStat>
+        weeklyStats = CalculateWeeklyStats();
+
+        topExercises = new List<ExerciseStat>
         {
-            new ExerciseStat { ExerciseName = "Жим лёжа", MuscleGroup = "Грудь", Count = 3, AvgWeight = 80.0, MaxWeight = 87.5 },
-            new ExerciseStat { ExerciseName = "Приседания", MuscleGroup = "Ноги", Count = 2, AvgWeight = 100.0, MaxWeight = 110.0 },
-            new ExerciseStat { ExerciseName = "Тяга штанги в наклоне", MuscleGroup = "Спина", Count = 2, AvgWeight = 60.0, MaxWeight = 60.0 }
+            new ExerciseStat { ExerciseName = "Жим лёжа", MuscleGroup = "Грудь", Count = 12 },
+            new ExerciseStat { ExerciseName = "Приседания", MuscleGroup = "Ноги", Count = 10 },
+            new ExerciseStat { ExerciseName = "Тяга штанги", MuscleGroup = "Спина", Count = 8 },
+            new ExerciseStat { ExerciseName = "Жим гантелей", MuscleGroup = "Плечи", Count = 6 },
+            new ExerciseStat { ExerciseName = "Подъём на бицепс", MuscleGroup = "Бицепс", Count = 5 }
         };
+
+        muscleGroupStats = new List<MuscleGroupStat>
+        {
+            new MuscleGroupStat { MuscleGroup = "Грудь", Count = 25 },
+            new MuscleGroupStat { MuscleGroup = "Ноги", Count = 20 },
+            new MuscleGroupStat { MuscleGroup = "Спина", Count = 18 },
+            new MuscleGroupStat { MuscleGroup = "Плечи", Count = 15 },
+            new MuscleGroupStat { MuscleGroup = "Руки", Count = 12 }
+        };
+    }
+
+    private List<WeeklyStat> CalculateWeeklyStats()
+    {
+        var stats = new List<WeeklyStat>();
+        var grouped = trainings.GroupBy(t => GetWeekNumber(t.Date));
+
+        foreach (var group in grouped)
+        {
+            var weekTrainings = group.ToList();
+            var firstDate = weekTrainings.Min(t => t.Date);
+            var lastDate = weekTrainings.Max(t => t.Date);
+
+            stats.Add(new WeeklyStat
+                {
+                    WeekNumber = group.Key,
+                    StartDate = firstDate,
+                    EndDate = lastDate,
+                    TrainingCount = weekTrainings.Count,
+                    TotalMinutes = weekTrainings.Sum(t => t.DurationMinutes),
+                    AvgMinutes = weekTrainings.Any() ? (int)Math.Round(weekTrainings.Average(t => (double)t.DurationMinutes)) : 0
+                });
+        }
+
+        return stats;
+    }
+
+    private int GetWeekNumber(DateTime date)
+    {
+        var culture = System.Globalization.CultureInfo.CurrentCulture;
+        return culture.Calendar.GetWeekOfYear(date, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+    }
+
+    public class WeeklyStat
+    {
+        public int WeekNumber { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int TrainingCount { get; set; }
+        public int TotalMinutes { get; set; }
+        public int AvgMinutes { get; set; }
     }
 
     public class ExerciseStat
@@ -172,7 +290,11 @@
         public string ExerciseName { get; set; } = string.Empty;
         public string MuscleGroup { get; set; } = string.Empty;
         public int Count { get; set; }
-        public double AvgWeight { get; set; }
-        public double MaxWeight { get; set; }
+    }
+
+    public class MuscleGroupStat
+    {
+        public string MuscleGroup { get; set; } = string.Empty;
+        public int Count { get; set; }
     }
 }

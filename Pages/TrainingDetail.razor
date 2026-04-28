@@ -1,5 +1,4 @@
 ﻿@page "/training/{Id:int}"
-@using System.Linq
 @using TrainingApp.Models
 @using TrainingApp.Services
 @inject ITrainingService TrainingService
@@ -99,27 +98,45 @@ else
                     <div class="card mb-3 border-primary">
                         <div class="card-header bg-light">Новое упражнение</div>
                         <div class="card-body">
+                            @if (!string.IsNullOrEmpty(exerciseErrorMessage))
+                            {
+                                <div class="alert alert-danger mb-3">
+                                    <strong>⚠️ Ошибка:</strong> @exerciseErrorMessage
+                                </div>
+                            }
+
                             <EditForm Model="@newWorkoutExercise" OnValidSubmit="SaveExerciseToTraining">
                                 <DataAnnotationsValidator />
                                 <div class="row g-3">
                                     <div class="col-md-5">
                                         <label class="form-label fw-bold">Упражнение *</label>
                                         <InputSelect @bind-Value="newWorkoutExercise.ExerciseId" class="form-select">
-                                            <option value="">-- Выберите --</option>
+                                            <option value="">-- Выберите упражнение --</option>
                                             @foreach (var ex in availableExercises)
                                             {
                                                 <option value="@ex.Id">@ex.Name (@ex.MuscleGroup)</option>
                                             }
                                         </InputSelect>
-                                        <ValidationMessage For="@(() => newWorkoutExercise.ExerciseId)" class="text-danger" />
+                                        @if (!string.IsNullOrWhiteSpace(exerciseValidationErrors["ExerciseId"]))
+                                        {
+                                            <div class="text-danger mt-1"><strong>@exerciseValidationErrors["ExerciseId"]</strong></div>
+                                        }
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label fw-bold">Подходы</label>
                                         <InputNumber @bind-Value="newWorkoutExercise.Sets" class="form-control" />
+                                        @if (!string.IsNullOrWhiteSpace(exerciseValidationErrors["Sets"]))
+                                        {
+                                            <div class="text-danger mt-1"><strong>@exerciseValidationErrors["Sets"]</strong></div>
+                                        }
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label fw-bold">Повторения</label>
                                         <InputNumber @bind-Value="newWorkoutExercise.Reps" class="form-control" />
+                                        @if (!string.IsNullOrWhiteSpace(exerciseValidationErrors["Reps"]))
+                                        {
+                                            <div class="text-danger mt-1"><strong>@exerciseValidationErrors["Reps"]</strong></div>
+                                        }
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label fw-bold">Вес (кг)</label>
@@ -199,6 +216,8 @@ else
     private List<Exercise> availableExercises = new();
     private WorkoutExercise newWorkoutExercise = new();
     private bool showExerciseForm = false;
+    private string exerciseErrorMessage = "";
+    private Dictionary<string, string> exerciseValidationErrors = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -219,18 +238,52 @@ else
     {
         newWorkoutExercise = new WorkoutExercise { TrainingId = Id, Sets = 3, Reps = 10 };
         showExerciseForm = true;
+        exerciseErrorMessage = "";
+        exerciseValidationErrors.Clear();
     }
 
     private async Task SaveExerciseToTraining()
     {
+        exerciseErrorMessage = "";
+        exerciseValidationErrors.Clear();
+        bool hasError = false;
+
+        if (newWorkoutExercise.ExerciseId == 0)
+        {
+            exerciseValidationErrors["ExerciseId"] = "Выберите упражнение!";
+            hasError = true;
+        }
+
+        if (newWorkoutExercise.Sets <= 0)
+        {
+            exerciseValidationErrors["Sets"] = "Подходы > 0!";
+            hasError = true;
+        }
+
+        if (newWorkoutExercise.Reps <= 0)
+        {
+            exerciseValidationErrors["Reps"] = "Повторения > 0!";
+            hasError = true;
+        }
+
+        if (hasError)
+        {
+            exerciseErrorMessage = "Исправьте ошибки!";
+            return;
+        }
+
         await WorkoutExerciseService.AddAsync(newWorkoutExercise);
         showExerciseForm = false;
+        exerciseErrorMessage = "";
+        exerciseValidationErrors.Clear();
         workoutExercises = (await WorkoutExerciseService.GetByTrainingIdAsync(Id)).ToList();
     }
 
     private void CancelAddExercise()
     {
         showExerciseForm = false;
+        exerciseErrorMessage = "";
+        exerciseValidationErrors.Clear();
     }
 
     private async Task DeleteExerciseFromTraining(int workoutExerciseId)
