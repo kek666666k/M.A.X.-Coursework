@@ -45,7 +45,7 @@ TrainingApp/
 4. Запустите приложение:
    dotnet run
 
-Приложение доступно по адресу: http://localhost:58734
+Приложение доступно по адресу: http://localhost:58735
 
 ### Запуск через Docker
 1. Убедитесь, что Docker Desktop запущен.
